@@ -1,7 +1,4 @@
-// Keep transformations separate from the DOM so they can be tested directly.
-export function cleanLines(text) {
-  if (typeof text !== 'string') throw new TypeError('Expected text');
-  const lines = text.split(/\r\n|\r|\n/).map(line => line.trim()).filter(Boolean);
-  const unique = [...new Set(lines)];
-  return { text: unique.join('\n'), count: unique.length, removed: lines.length - unique.length };
-}
+import {quantile} from './shared.mjs';
+export const present=rows=>rows;
+export function bounds(rows,p=.5){return{lower:quantile(rows.map(r=>r.lower),p),upper:quantile(rows.map(r=>r.upper),p),n:rows.filter(r=>Number.isFinite(r.lower)&&Number.isFinite(r.upper)).length};}
+export function analyse(rows,state,data){const selected=state.facets.crossing_name||data.records.find(r=>r.crossing_name)?.crossing_name,all=data.records.filter(r=>r.crossing_name===selected),historic=all.filter(r=>r.series==='2019 Q4 hourly archive'),current=all.find(r=>r.series==='Current report'),b=bounds(historic),p90=bounds(historic,.9),cells=[];for(let d=0;d<7;d++)for(let h=0;h<24;h++){const subset=historic.filter(r=>r.weekday===d&&r.hour===h),v=bounds(subset);cells.push({weekday:d,hour:h,value:v.upper,detail:v.n?`Median ${v.lower}–${v.upper} minutes from ${v.n} usable reports`:'No usable reports'});}return{metrics:[{label:selected||'Crossing',value:current?.wait||'No current report',note:'Canada-bound traveller traffic'},{label:'2019 usable reports',value:b.n,note:'Missing/conflicting reports excluded'},{label:'2019 median bound',value:b.n?`${b.lower}–${b.upper} min`:'—',note:'No delay preserved as 0–5'},{label:'2019 90th percentile bound',value:p90.n?`${p90.lower}–${p90.upper} min`:'—',note:'Historical sample, not a prediction'}],panels:[{type:'heatmap',title:'2019 Q4 weekday/hour median bounds · '+selected,items:cells,note:'Cells show the upper median bound in minutes. Hover for the interval and sample count. Source-local hours; Mon–Sun. All-crossing views show the first crossing only.'},{type:'line',title:'Monthly percentage meeting service standard · '+selected,unit:'%',items:all.filter(r=>r.series==='Monthly service standard').sort((a,b)=>a.month.localeCompare(b.month)).map(r=>({label:r.month,value:r.service_standard_met_percent})),note:'Monthly percentages are a different series from minute wait estimates.'}]};}

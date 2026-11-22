@@ -1,16 +1,22 @@
 {
-  "id": "coolcode-tool-template",
-  "title": "CoolCode Tool Starter",
-  "description": "A browser-only example that trims lines and removes exact duplicates.",
-  "category": "security",
-  "tags": ["text", "lines", "duplicates"],
-  "icon": "scan-search",
-  "url": "/coolcode-tool-template/",
-  "source": "https://github.com/jsdyer/coolcode-tool-template",
+  "id": "borderpulse",
+  "title": "Border Pulse",
+  "description": "Canada-bound waits, kept in context. Compare reported crossing conditions, older hourly patterns and monthly service-standard results.",
+  "category": "places",
+  "tags": [
+    "borderpulse",
+    "places",
+    "public data",
+    "history"
+  ],
+  "icon": "history",
+  "url": "/borderpulse/",
+  "source": "https://github.com/jsdyer/borderpulse",
   "hosting": "project",
   "access": "browser",
   "data_info": {
-    "mode": "local",
-    "detail": "The browser reads the text you paste and compares its lines."
+    "mode": "snapshot",
+    "detail": "Canada-bound reports for four BC crossings, with 2019 hourly and later monthly historical data.",
+    "cadence": "Every 30 minutes"
   }
 }
