@@ -6,6 +6,7 @@ Open https://coolcode.ca/borderpulse/
 
 <!-- coolcode:guide -->
 Choose a crossing and distinguish current reports, the 2019 Q4 hourly sample and newer monthly service-standard percentages. No delay means up to five minutes; missing and conflicting observations are excluded from wait statistics.
+If a crossing is absent from the current CBSA feed, its historical records remain available and its current report is explicitly unavailable.
 <!-- /coolcode:guide -->
 
 ## Sources and interpretation
@@ -47,7 +48,7 @@ Application code is MIT licensed; upstream data retains its original licence and
 
 Public GitHub repositories can have scheduled workflows disabled after 60 days of inactivity. A separate weekly [schedule guard](.github/workflows/schedule-guard.yml) calls GitHub's enable-workflow API for an explicit list of refresh workflows and itself. It can restore workflows disabled for inactivity, preserves manually disabled workflows, and runs independently of collection failures.
 
-This is an interim mitigation, not a scheduling guarantee: GitHub does not document active-workflow renewal as a permanent exemption, and scheduled runs can be delayed or dropped. A scheduler on our own Linux server is the planned independent trigger. The guard does not collect data, create dummy commits, or change source/check timestamps; successful collection and published data freshness still need monitoring.
+This is an interim mitigation, not a scheduling guarantee: GitHub does not document active-workflow renewal as a permanent exemption, and scheduled runs can be delayed or dropped. The independent scheduler on our Linux server triggers overdue refreshes and checks published freshness; its code and current target list live in [the hub repository](https://github.com/jsdyer/jsdyer.github.io/tree/main/services/refresh-watchdog). The guard does not collect data, create dummy commits, or change source/check timestamps; successful collection and published data freshness still need monitoring.
 <!-- /schedule-reliability -->
 
 If CBSA omits one of the four tracked crossings from its otherwise valid national feed, current reports for the other crossings still refresh. The page names each missing crossing and shows “No current report” for it; historical reports retain their original timestamps. Unknown headers, duplicate crossings, empty/truncated feeds and unrecognized wait values still fail validation.

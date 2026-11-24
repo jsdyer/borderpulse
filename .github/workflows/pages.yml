@@ -22,7 +22,6 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: ${{ github.event_name != 'pull_request' }}
-          fetch-depth: 0
       - name: Detect collection changes
         id: source_changes
         if: github.event_name == 'push'
@@ -45,9 +44,10 @@ jobs:
         id: mode
         env:
           EVENT: ${{ github.event_name }}
+          SOURCE_REFRESH: ${{ steps.source_changes.outputs.refresh }}
         run: |
           collect=false
-          if [ "$EVENT" != pull_request ] && { [ "$EVENT" = schedule ] || [ "$EVENT" = workflow_dispatch ] || [ ! -f data/current.json ]; }; then collect=true; fi
+          if [ "$EVENT" != pull_request ] && { [ "$EVENT" = schedule ] || [ "$EVENT" = workflow_dispatch ] || [ "$SOURCE_REFRESH" = true ] || [ ! -f data/current.json ]; }; then collect=true; fi
           echo "collect=$collect" >> "$GITHUB_OUTPUT"
 
       - name: Monitor collection start
