@@ -49,3 +49,7 @@ Public GitHub repositories can have scheduled workflows disabled after 60 days o
 
 This is an interim mitigation, not a scheduling guarantee: GitHub does not document active-workflow renewal as a permanent exemption, and scheduled runs can be delayed or dropped. A scheduler on our own Linux server is the planned independent trigger. The guard does not collect data, create dummy commits, or change source/check timestamps; successful collection and published data freshness still need monitoring.
 <!-- /schedule-reliability -->
+
+If CBSA omits one of the four tracked crossings from its otherwise valid national feed, current reports for the other crossings still refresh. The page names each missing crossing and shows “No current report” for it; historical reports retain their original timestamps. Unknown headers, duplicate crossings, empty/truncated feeds and unrecognized wait values still fail validation.
+
+A change to the collector, its browser regression check or its Pages workflow triggers a live refresh before publication. Ordinary UI and data-only commits still build from retained data. Scheduled and manual refresh controls are unchanged.

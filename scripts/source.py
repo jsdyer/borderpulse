@@ -69,6 +69,24 @@ def quantile(vals,p):
 def stats(rows):
  usable=[r for r in rows if r.get('lower') is not None]
  return {'n':len(usable),'censored':sum(r['status']=='censored' for r in usable),'median_lower':quantile([r['lower'] for r in usable],.5) if usable else None,'median_upper':quantile([r['upper'] for r in usable],.5) if usable else None,'p90_lower':quantile([r['lower'] for r in usable],.9) if usable else None,'p90_upper':quantile([r['upper'] for r in usable],.9) if usable else None}
+def parse_current(text):
+ lines=text.lstrip('\ufeff').strip().splitlines()
+ expected=['Customs Office','Location','Last updated','Commercial Flow - Canada bound','Commercial Flow - U.S. bound','Travellers Flow - Canada bound','Travellers Flow - U.S. bound']
+ if not lines or [x.strip() for x in lines[0].split(';;')][:7]!=expected:
+  raise ValueError('Unrecognized CBSA current feed header')
+ current=[];seen=set();national=0
+ for line in lines[1:]:
+  if not line.strip():continue
+  parts=[x.strip() for x in line.split(';;')]
+  if len(parts)<7:raise ValueError('Incomplete CBSA current feed row')
+  national+=1;crossing=CROSSINGS.get(parts[0])
+  if not crossing:continue
+  if crossing in seen:raise ValueError('Duplicate crossing in current feed: '+crossing)
+  seen.add(crossing)
+  current.append({'crossing':crossing,'source_name':parts[0],**timestamp(parts[2]),'travellers':wait_value(parts[5]),'commercial':wait_value(parts[3])})
+ if national<20 or not current:raise ValueError('Empty or truncated CBSA current feed')
+ return current,sorted(set(LABELS)-seen)
+
 def border():
  groups=collections.defaultdict(list)
  for row in csv.DictReader((ROOT/'border-2019q4.csv').open(encoding='utf-8-sig')):
@@ -95,12 +113,8 @@ def border():
   except ValueError:p=None
   if p is not None and not 0<=p<=100:raise ValueError('Invalid service percentage')
   monthly.append({'crossing':crossing,'month':f'{year}-{month:02d}','service_standard_met_percent':p})
- current=[];lines=(ROOT/'current.csv').read_text(encoding='utf-8-sig').strip().splitlines()
- for line in lines[1:]:
-  parts=[x.strip() for x in line.split(';;')]
-  crossing=CROSSINGS.get(parts[0])
-  if crossing:current.append({'crossing':crossing,'source_name':parts[0],**timestamp(parts[2]),'travellers':wait_value(parts[5]),'commercial':wait_value(parts[3])})
- result={'crossings':LABELS,'historical_period':['2019-10-01','2019-12-31'],'heatmap':cells,'observations':observations,'current':current,'monthly':monthly,'diagnostics':{'unique_crossing_hours':len(groups),'conflicting_hours_excluded':conflicts,'duplicate_copies':duplicate_copies,'usable_hours':sum(r['lower'] is not None for r in observations)},'sources':[{'url':URLS[n],'sha256':sha(n)} for n in ['border-2019q4.csv','history.csv','current.csv','border-reference.odt','changelog.txt']]}
+ current,missing=parse_current((ROOT/'current.csv').read_text(encoding='utf-8-sig'))
+ result={'crossings':LABELS,'historical_period':['2019-10-01','2019-12-31'],'heatmap':cells,'observations':observations,'current':current,'missing_current':missing,'monthly':monthly,'diagnostics':{'unique_crossing_hours':len(groups),'conflicting_hours_excluded':conflicts,'duplicate_copies':duplicate_copies,'usable_hours':sum(r['lower'] is not None for r in observations)},'sources':[{'url':URLS[n],'sha256':sha(n)} for n in ['border-2019q4.csv','history.csv','current.csv','border-reference.odt','changelog.txt']]}
  dump('border-normalized.json',result);return result
 if __name__=='__main__':
  p=argparse.ArgumentParser();p.add_argument('--download',action='store_true');args=p.parse_args()

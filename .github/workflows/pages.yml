@@ -20,8 +20,19 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          persist-credentials: false
           fetch-depth: 0
+          persist-credentials: ${{ github.event_name != 'pull_request' }}
+          fetch-depth: 0
+      - name: Detect collection changes
+        id: source_changes
+        if: github.event_name == 'push'
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null ||
+             ! git diff --quiet "$BEFORE" "$GITHUB_SHA" -- scripts/refresh.py scripts/collect.py scripts/source.py scripts/public_download.py tests/browser_smoke.py .github/workflows/pages.yml; then
+            echo "refresh=true" >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
