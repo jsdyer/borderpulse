@@ -18,7 +18,7 @@ with socketserver.TCPServer(('127.0.0.1',0),Handler) as server:
   page.locator('#query').fill('');page.locator('#rows tr button').first.click();assert page.locator('#detail').is_visible()
   with page.expect_download() as download:page.locator('#export').click()
   assert download.value.suggested_filename.endswith('.csv')
-  page.locator('#snapshot').select_option(index=1);page.locator('#rows tr').first.wait_for(timeout=60000)
+  page.locator('#snapshot').select_option(index=1);page.locator('#rows tr').first.wait_for(timeout=60000);page.locator('#national-current h2').filter(has_text='Reports in selected capture').wait_for()
   page.locator('#detail').evaluate('(el)=>el.hidden=true')
   page.locator('body').press('Control+Home');(ROOT/'browser-checks').mkdir(exist_ok=True);page.screenshot(path=str(ROOT/'browser-checks/desktop.png'),full_page=True)
   page.set_viewport_size({'width':390,'height':844});page.screenshot(path=str(ROOT/'browser-checks/mobile.png'),full_page=True)
