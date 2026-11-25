@@ -2,6 +2,7 @@
 """Build a browser tool using Python's standard library; no network required."""
 from html import escape
 import json
+import hashlib
 from pathlib import Path
 import re
 import shutil
@@ -38,6 +39,31 @@ def metadata(root=ROOT):
     if source.scheme != "https" or not source.hostname or source.username is not None or any(c.isspace() for c in tool["source"]) or "\\" in tool["source"]:
         raise ValueError("source must be an HTTPS URL without credentials or whitespace")
     return tool
+
+
+def version_assets(stage):
+    """Give the whole local asset graph one deterministic cache version."""
+    digest = hashlib.sha256()
+    for path in sorted(stage.rglob("*")):
+        if path.is_file():
+            digest.update(path.relative_to(stage).as_posix().encode())
+            digest.update(b"\0")
+            digest.update(path.read_bytes())
+    version = digest.hexdigest()[:16]
+
+    def local_reference(match):
+        quote, relative = match.group(1), match.group(2)
+        target = stage / relative.removeprefix("./")
+        if target.is_file() and target.suffix in {".mjs", ".css", ".json"}:
+            return f"{quote}{relative}?v={version}{quote}"
+        return match.group(0)
+
+    # Version imports and config fetches together, so an updated app never imports
+    # a still-fresh cached module from the previous release.
+    references = re.compile(r"([\"'])(\./[^\"'?]+)\1")
+    for path in [stage / "index.html", *stage.glob("*.mjs")]:
+        path.write_text(references.sub(local_reference, path.read_text(encoding="utf-8")), encoding="utf-8")
+    return version
 
 
 def build(root=ROOT):
@@ -77,6 +103,7 @@ def build(root=ROOT):
         (stage / ".nojekyll").touch()
         from build_data import assemble
         assemble(root, stage)
+        version_assets(stage)
         if output.exists():
             shutil.rmtree(output)
         shutil.copytree(stage, output)

@@ -22,7 +22,7 @@ class CurrentFeedTests(unittest.TestCase):
  def test_missing_crossing_does_not_invent_report_or_drop_other_reports(self):
   from source import parse_current
   rows,missing=parse_current(self.feed(['Douglas','Pacific Highway','Abbotsford-Huntingdon']))
-  self.assertEqual(len(rows),3);self.assertEqual(missing,['aldergrove'])
+  self.assertEqual(len(rows),23);self.assertEqual(missing,['aldergrove'])
  def test_current_feed_accepts_hour_waits_for_both_traffic_types(self):
   from source import parse_current
   text=self.feed(['Douglas']).replace('No Delay;; --;; No Delay','1 hour, 5 minutes;; --;; 2 hours, 10 minutes')
@@ -37,3 +37,17 @@ class CurrentFeedTests(unittest.TestCase):
   from source import parse_current
   for text in ('',self.feed(['Douglas']).splitlines()[0]+'\nDouglas;; BC/WA'):
    with self.assertRaises(ValueError):parse_current(text)
+
+class NationalTests(unittest.TestCase):
+ def test_real_national_source_and_added_crossing(self):
+  from source import parse_current
+  raw=(Path(__file__).parent/'fixtures/current-national.csv').read_text(encoding='utf-8-sig')
+  rows,_=parse_current(raw)
+  self.assertGreaterEqual(len(rows),20)
+  self.assertEqual({r['province'] for r in rows},{'NB','QC','ON','MB','SK','AB','BC'})
+  rows,_=parse_current(raw+'Future Crossing;; Town, NB/State, ME;; 2026-11-25 03:00 AST;; Closed;; --;; 12 minutes;; --;;\n')
+  self.assertEqual(rows[-1]['crossing'],'future-crossing')
+  self.assertEqual(rows[-1]['travellers']['lower'],12)
+ def test_national_source_offsets(self):
+  self.assertEqual(timestamp('2026-11-25 02:00 AST')['reported_at'],'2026-11-25T06:00:00Z')
+  self.assertEqual(timestamp('2026-11-25 02:00 NST')['reported_at'],'2026-11-25T05:30:00Z')

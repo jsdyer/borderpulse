@@ -1,5 +1,5 @@
 from pathlib import Path
-import contextlib,http.server,socketserver,threading
+import contextlib,http.server,socketserver,threading,os,shutil
 from playwright.sync_api import sync_playwright
 ROOT=Path(__file__).resolve().parents[1]
 class Handler(http.server.SimpleHTTPRequestHandler):
@@ -8,8 +8,12 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 with socketserver.TCPServer(('127.0.0.1',0),Handler) as server:
  threading.Thread(target=server.serve_forever,daemon=True).start()
  with sync_playwright() as p:
-  browser=p.chromium.launch();page=browser.new_page(viewport={'width':1280,'height':900});errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
+  browser=p.chromium.launch(executable_path=os.environ.get("CHROME_PATH") or shutil.which("google-chrome"));page=browser.new_page(viewport={'width':1280,'height':900});errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
   page.goto(f'http://127.0.0.1:{server.server_address[1]}/');page.locator('#rows tr').first.wait_for(timeout=60000)
+  assert page.locator('#national-current .crossing-card').count() >= 20
+  save=page.locator('#national-current button[aria-pressed]').first;save.click();assert save.get_attribute('aria-pressed')=='true'
+  page.reload();page.locator('#rows tr').first.wait_for(timeout=60000)
+  assert page.locator('#national-current button[aria-pressed=true]').count()==1
   page.locator('#query').fill('zzzz_no_such_record_5938');assert page.locator('#rows tr').count()==0;assert page.locator('#empty').is_visible()
   page.locator('#query').fill('');page.locator('#rows tr button').first.click();assert page.locator('#detail').is_visible()
   with page.expect_download() as download:page.locator('#export').click()

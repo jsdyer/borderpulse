@@ -17,11 +17,12 @@ URLS={
  'border-reference.odt':'https://www.cbsa-asfc.gc.ca/data/bwt-taf--ref.odt',
  'changelog.txt':'https://www.cbsa-asfc.gc.ca/data/bwt-taf--changelog.txt'
 }
+SETTINGS=json.loads((Path(__file__).resolve().parents[1]/'web/settings.json').read_text())
 CROSSINGS={'Douglas':'peace-arch','Douglas (Peace Arch)':'peace-arch','Pacific Highway':'pacific-highway','Aldergrove':'aldergrove','Abbotsford-Huntingdon':'sumas'}
 LABELS={'peace-arch':'Peace Arch (Douglas)','pacific-highway':'Pacific Highway','aldergrove':'Aldergrove','sumas':'Sumas (Abbotsford-Huntingdon)'}
 def get(name):
- with urlopen(Request(URLS[name],headers={'User-Agent':'CoolCode source research'}),timeout=60) as r: raw=r.read(40_000_001)
- if len(raw)>40_000_000:raise ValueError('Source exceeds size cap')
+ from common import fetch
+ raw=fetch(URLS[name],limit=40_000_000)
  (ROOT/name).write_bytes(raw)
 def sha(name):return hashlib.sha256((ROOT/name).read_bytes()).hexdigest()
 def clean(s):return ' '.join((s or '').split())
@@ -66,10 +67,10 @@ def wait_value(raw):
  if s in ('missed entry','not applicable','--',''):return {'status':'missing','lower':None,'upper':None,'raw':raw}
  raise ValueError('Unknown wait category '+raw)
 def timestamp(raw):
- # Respect the supplied zone label, not a guessed current DST policy.
- m=re.fullmatch(r'(\d{4}-\d\d-\d\d \d\d:\d\d) (PDT|PST)',raw)
- if not m:raise ValueError('Unexpected Pacific timestamp '+raw)
- dt=datetime.strptime(m[1],'%Y-%m-%d %H:%M').replace(tzinfo=timezone(timedelta(hours=-7 if m[2]=='PDT' else -8)))
+ # Preserve the source's explicit offset, including unusual seasonal labels.
+ m=re.fullmatch(r'(\d{4}-\d\d-\d\d \d\d:\d\d) (NDT|NST|ADT|AST|EDT|EST|CDT|CST|MDT|MST|PDT|PST)',raw)
+ if not m:raise ValueError('Unexpected source timestamp '+raw)
+ dt=datetime.strptime(m[1],'%Y-%m-%d %H:%M').replace(tzinfo=timezone(timedelta(hours={'NDT':-2.5,'NST':-3.5,'ADT':-3,'AST':-4,'EDT':-4,'EST':-5,'CDT':-5,'CST':-6,'MDT':-6,'MST':-7,'PDT':-7,'PST':-8}[m[2]])))
  return {'local_time':m[1],'reported_zone':m[2],'reported_at':dt.astimezone(timezone.utc).isoformat().replace('+00:00','Z'),'weekday':dt.weekday(),'hour':dt.hour}
 def quantile(vals,p):
  vals=sorted(vals);pos=(len(vals)-1)*p;lo=int(pos);hi=min(lo+1,len(vals)-1);return round(vals[lo]+(vals[hi]-vals[lo])*(pos-lo),2)
@@ -86,13 +87,17 @@ def parse_current(text):
   if not line.strip():continue
   parts=[x.strip() for x in line.split(';;')]
   if len(parts)<7:raise ValueError('Incomplete CBSA current feed row')
-  national+=1;crossing=CROSSINGS.get(parts[0])
-  if not crossing:continue
+  national+=1
+  alias=SETTINGS['aliases'].get(parts[0],{})
+  crossing=alias.get('id') or re.sub(r'[^a-z0-9]+','-',parts[0].casefold()).strip('-')
+  if not crossing:raise ValueError('Missing crossing name')
+  LABELS[crossing]=alias.get('label',parts[0])
+  province=re.search(r',\s*([A-Z]{2})/',parts[1])
   if crossing in seen:raise ValueError('Duplicate crossing in current feed: '+crossing)
   seen.add(crossing)
-  current.append({'crossing':crossing,'source_name':parts[0],**timestamp(parts[2]),'travellers':wait_value(parts[5]),'commercial':wait_value(parts[3])})
- if national<20 or not current:raise ValueError('Empty or truncated CBSA current feed')
- return current,sorted(set(LABELS)-seen)
+  current.append({'crossing':crossing,'crossing_name':LABELS[crossing],'source_name':parts[0],'location':parts[1],'province':province[1] if province else 'Unknown',**timestamp(parts[2]),'travellers':wait_value(parts[5]),'commercial':wait_value(parts[3])})
+ if national<SETTINGS['minimum_feed_rows'] or not current:raise ValueError('Empty or truncated CBSA current feed')
+ return current,sorted({a['id'] for a in SETTINGS['aliases'].values()}-seen)
 
 def border():
  groups=collections.defaultdict(list)

@@ -1,0 +1,27 @@
+{
+  "aliases": {
+    "Douglas": {
+      "id": "peace-arch",
+      "label": "Peace Arch (Douglas)"
+    },
+    "Douglas (Peace Arch)": {
+      "id": "peace-arch",
+      "label": "Peace Arch (Douglas)"
+    },
+    "Pacific Highway": {
+      "id": "pacific-highway",
+      "label": "Pacific Highway"
+    },
+    "Aldergrove": {
+      "id": "aldergrove",
+      "label": "Aldergrove"
+    },
+    "Abbotsford-Huntingdon": {
+      "id": "sumas",
+      "label": "Sumas (Abbotsford-Huntingdon)"
+    }
+  },
+  "minimum_feed_rows": 20,
+  "stale_report_minutes": 120,
+  "favourites": []
+}

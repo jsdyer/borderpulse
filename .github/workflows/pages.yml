@@ -29,7 +29,7 @@ jobs:
           BEFORE: ${{ github.event.before }}
         run: |
           if ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null ||
-             ! git diff --quiet "$BEFORE" "$GITHUB_SHA" -- scripts/refresh.py scripts/collect.py scripts/source.py scripts/public_download.py tests/browser_smoke.py .github/workflows/pages.yml; then
+             ! git diff --quiet "$BEFORE" "$GITHUB_SHA" -- scripts/refresh.py scripts/collect.py scripts/source.py scripts/public_download.py tests/browser_smoke.py web/settings.json .github/workflows/pages.yml; then
             echo "refresh=true" >> "$GITHUB_OUTPUT"
           fi
       - uses: actions/setup-python@v6
@@ -67,7 +67,6 @@ jobs:
       - name: Install browser test dependencies
         run: |
           python3 -m pip install -r tests/browser-requirements.txt
-          python3 -m playwright install --with-deps chromium
       - name: Check desktop, mobile, filters, source details and CSV
         run: python3 tests/browser_smoke.py
       - name: Save full-page screenshots

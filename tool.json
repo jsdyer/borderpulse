@@ -4,9 +4,10 @@
   "description": "Canada-bound waits, kept in context. Compare reported crossing conditions, older hourly patterns and monthly service-standard results.",
   "category": "places",
   "tags": [
-    "borderpulse",
-    "places",
-    "public data",
+    "border",
+    "travel",
+    "Canada",
+    "wait times",
     "history"
   ],
   "icon": "history",
@@ -16,7 +17,7 @@
   "access": "browser",
   "data_info": {
     "mode": "snapshot",
-    "detail": "Canada-bound reports for four BC crossings, with 2019 hourly and later monthly historical data.",
+    "detail": "Current national CBSA Canada-bound reports, with retained four-crossing BC hourly and monthly history.",
     "cadence": "Every 30 minutes"
   }
 }

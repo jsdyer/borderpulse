@@ -5,7 +5,7 @@ Canada-bound waits, kept in context. Compare reported crossing conditions, older
 Open https://coolcode.ca/borderpulse/
 
 <!-- coolcode:guide -->
-Choose a crossing and distinguish current reports, the 2019 Q4 hourly sample and newer monthly service-standard percentages. No delay means up to five minutes; missing and conflicting observations are excluded from wait statistics.
+Compare every currently reported Canada-bound crossing nationally, save favourites on this browser, and distinguish current reports, the 2019 Q4 hourly sample and newer monthly service-standard percentages. No delay means up to five minutes; missing and conflicting observations are excluded from wait statistics.
 If a crossing is absent from the current CBSA feed, its historical records remain available and its current report is explicitly unavailable.
 <!-- /coolcode:guide -->
 
@@ -19,13 +19,13 @@ The official dictionary defines No delay as five minutes or less. Its interval i
 
 Numeric waits can be supplied in minutes or as hours and minutes: `1 hour, 5 minutes` is stored as 65 minutes with the original source wording retained. Unknown formats, invalid minute components and waits longer than 24 hours fail validation.
 
-The current feed is checked every 30 minutes. Unchanged report timestamps are not counted as new observations. Each crossing’s source timestamp and supplied PST/PDT offset remain visible; retrieval time is not report time.
+The current feed is checked every 30 minutes. Unchanged report timestamps are not counted as new observations. Each crossing’s source timestamp and supplied timezone offset remain visible; retrieval time is not report time.
 
 ## Collection and archive
 
 Schedule: **Every 30 minutes** (`7,37 * * * *`, UTC). GitHub schedules are best effort. Scheduled and manual runs collect, validate, commit dated snapshots and deploy. A first code push also collects if no saved dataset exists. Other code pushes rebuild the saved dataset offline.
 
-`data/current.json` contains the latest four crossing reports and metadata. `data/baseline.json` contains the dated historical files; `data/observations.json` accumulates distinct live report timestamps without counting repeated polls as new observations. `archive/YYYY-MM/*.json.gz` retains distinct captured versions; `data/history.json` lists them. Identical data checks update the check time without manufacturing a change. An initial capture is labelled baseline. Archive data is tracked in Git and does not expire with Actions artifacts. The site has snapshot selection, filtering, source detail, CSV export and an RSS change feed.
+`data/current.json` contains all latest national crossing reports and metadata. `data/baseline.json` contains the dated historical files; `data/observations.json` accumulates distinct live report timestamps without counting repeated polls as new observations. `archive/YYYY-MM/*.json.gz` retains distinct captured versions; `data/history.json` lists them. Identical data checks update the check time without manufacturing a change. An initial capture is labelled baseline. Archive data is tracked in Git and does not expire with Actions artifacts. The site has snapshot selection, filtering, source detail, CSV export and an RSS change feed.
 
 The default build needs no network. Failed source validation does not replace the published dataset. Optional `HEALTHCHECKS_PING_URL` sends start/success/failure pings for collection runs; no accuracy email is implied.
 
@@ -53,6 +53,18 @@ Public GitHub repositories can have scheduled workflows disabled after 60 days o
 This is an interim mitigation, not a scheduling guarantee: GitHub does not document active-workflow renewal as a permanent exemption, and scheduled runs can be delayed or dropped. The independent scheduler on our Linux server triggers overdue refreshes and checks published freshness; its code and current target list live in [the hub repository](https://github.com/jsdyer/jsdyer.github.io/tree/main/services/refresh-watchdog). The guard does not collect data, create dummy commits, or change source/check timestamps; successful collection and published data freshness still need monitoring.
 <!-- /schedule-reliability -->
 
-If CBSA omits one of the four tracked crossings from its otherwise valid national feed, current reports for the other crossings still refresh. The page names each missing crossing and shows “No current report” for it; historical reports retain their original timestamps. Unknown headers, duplicate crossings, empty/truncated feeds and unrecognized wait values still fail validation.
+If CBSA omits a previously reported crossing from its otherwise valid national feed, current reports for the other crossings still refresh. The page names each missing crossing and shows “No current report” for it; historical reports retain their original timestamps. Unknown headers, duplicate crossings, empty/truncated feeds and unrecognized wait values still fail validation.
 
 A change to the collector, its browser regression check or its Pages workflow triggers a live refresh before publication. Ordinary UI and data-only commits still build from retained data. Scheduled and manual refresh controls are unchanged.
+
+## National coverage and favourites
+
+The current board includes **every row in the national CBSA feed** (29 crossings in the verified 25 November 2026 capture), across NB, QC, ON, MB, SK, AB and BC. This is the reporting network, not every Canadian land crossing. Both Canada-bound traveller and commercial source values are retained. New crossing names are accepted automatically and receive stable IDs. Existing BC aliases retain their earlier archive identities. A removed crossing is reported absent; no old wait is promoted to a current report.
+
+Save crossings with the star button. Favourites stay on this browser in `coolcode:borderpulse:favourites` and sort first after refresh; removing a star clears that entry. No account or cookie is required. Reports older than two hours are visibly marked stale. The source's literal timezone label is preserved, even when its seasonal label looks unusual; future-dated reports are flagged. Office hours and U.S.-bound conditions link to their official services, and are not inferred from Canadian wait reports. We have not verified a supported CBP data feed for embedding U.S.-bound values.
+
+## Expand or customize
+
+Edit `web/settings.json`: `aliases` provides stable IDs/labels for renamed crossings, `favourites` sets optional starting preferences, `stale_report_minutes` controls the age warning, and `minimum_feed_rows` is a truncation guard, not a fixed coverage count. The parser accepts any additional valid national source row without changing this file. Add an alias for a source rename to preserve its historical identity.
+
+Run `python3 scripts/collect.py` or manually run **Data · Collect, check and publish** (`pages.yml`) to check the current national feed. Routine half-hour runs download only that small feed; they retain the dated historical baseline instead of redownloading several historical files every poll. `python3 scripts/collect.py --refresh-history` explicitly rebuilds the historical baseline from the original sources. It still covers the four BC crossings represented by this application's historical analysis; there is no invented national 2019 history. Run the tests and build commands above, then push to `main` for publication. `web/config.mjs` controls the explorer's default crossing and displayed facets; a code-only edit does not assert a new source date. Asset URLs carry a common content revision so browser caches cannot mix code from different releases.
