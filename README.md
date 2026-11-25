@@ -17,6 +17,8 @@ The archived timestamped sample covers October–December 2019. It can describe 
 
 The official dictionary defines No delay as five minutes or less. Its interval is preserved as 0–5 minutes; medians and 90th percentiles have lower/upper bounds. Closed, missing and conflicting duplicate reports are excluded rather than treated as zero.
 
+Numeric waits can be supplied in minutes or as hours and minutes: `1 hour, 5 minutes` is stored as 65 minutes with the original source wording retained. Unknown formats, invalid minute components and waits longer than 24 hours fail validation.
+
 The current feed is checked every 30 minutes. Unchanged report timestamps are not counted as new observations. Each crossing’s source timestamp and supplied PST/PDT offset remain visible; retrieval time is not report time.
 
 ## Collection and archive

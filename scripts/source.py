@@ -51,6 +51,13 @@ def wait_value(raw):
  s=clean(raw).casefold()
  if s=='no delay':return {'status':'censored','lower':0,'upper':5,'raw':raw}
  m=re.fullmatch(r'(\d+)(?:\s+minutes?)?',s)
+ hours=re.fullmatch(r'(\d+)\s+hours?(?:\s*,?\s*(\d+)\s+minutes?)?',s)
+ if hours:
+  minutes=int(hours[2] or 0)
+  if minutes>=60:raise ValueError('Invalid hour-and-minute wait')
+  n=int(hours[1])*60+minutes
+  if n>1440:raise ValueError('Out-of-range wait')
+  return {'status':'numeric','lower':n,'upper':n,'raw':raw}
  if m:
   n=int(m[1]);
   if n>1440:raise ValueError('Out-of-range wait')
